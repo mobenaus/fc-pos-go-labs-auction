@@ -1,0 +1,32 @@
+POST http://localhost:8080/auction
+Content-Type: application/json
+
+{
+    "product_name": "Janela",
+    "category": "casa",
+    "description": "Janela para casa de cidade",
+    "condition": 1
+}
+
+###
+GET http://localhost:8080/auction?status=0
+
+###
+POST http://localhost:8080/bid
+Content-Type: application/json
+
+{
+    "user_id": "2738b3cc-8135-4b4a-8e05-c6a7c9932113",
+    "auction_id": "9936fa00-2c61-4385-9c4e-25e82dcdf1cb",
+    "amount": 123.79
+}
+
+###
+POST http://localhost:8080/bid
+Content-Type: application/json
+
+{
+    "user_id": "2d0fc998-ba52-4dfb-9eb4-772a90cce470",
+    "auction_id": "9936fa00-2c61-4385-9c4e-25e82dcdf1cb",
+    "amount": 124
+}
