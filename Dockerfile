@@ -1,4 +1,4 @@
-FROM golang:1.20
+FROM golang:1.20 AS build
 
 WORKDIR /app
 
@@ -8,7 +8,14 @@ RUN go mod download
 
 COPY . .
 
-RUN go build -o /app/auction cmd/auction/main.go
+RUN GOOS=linux CGO_ENABLED=0 go build -o /app/auction cmd/auction/main.go
+
+FROM alpine
+
+WORKDIR /app
+
+COPY ./cmd/auction/.env /app/cmd/auction/.env 
+COPY --from=build /app/auction /app/auction
 
 EXPOSE 8080
 
