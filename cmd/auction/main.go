@@ -2,7 +2,9 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fullcycle-auction_go/configuration/database/mongodb"
+	"fullcycle-auction_go/configuration/logger"
 	"fullcycle-auction_go/internal/infra/api/web/controller/auction_controller"
 	"fullcycle-auction_go/internal/infra/api/web/controller/bid_controller"
 	"fullcycle-auction_go/internal/infra/api/web/controller/user_controller"
@@ -12,27 +14,33 @@ import (
 	"fullcycle-auction_go/internal/usecase/auction_usecase"
 	"fullcycle-auction_go/internal/usecase/bid_usecase"
 	"fullcycle-auction_go/internal/usecase/user_usecase"
+	"time"
+
+	ginzap "github.com/gin-contrib/zap"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 	"go.mongodb.org/mongo-driver/mongo"
-	"log"
 )
 
 func main() {
 	ctx := context.Background()
 
 	if err := godotenv.Load("cmd/auction/.env"); err != nil {
-		log.Fatal("Error trying to load env variables")
+		logger.Error("Error load configuration", errors.New("env file not found"))
 		return
 	}
 
 	databaseConnection, err := mongodb.NewMongoDBConnection(ctx)
 	if err != nil {
-		log.Fatal(err.Error())
+		logger.Error("Error connect database", err)
 		return
 	}
 
-	router := gin.Default()
+	logger.Info("starting...")
+
+	router := gin.New()
+
+	router.Use(ginzap.Ginzap(logger.GetLog(), time.RFC3339, true), gin.Recovery())
 
 	userController, bidController, auctionsController := initDependencies(databaseConnection)
 
@@ -43,6 +51,7 @@ func main() {
 	router.POST("/bid", bidController.CreateBid)
 	router.GET("/bid/:auctionId", bidController.FindBidByAuctionId)
 	router.GET("/user/:userId", userController.FindUserById)
+	router.POST("/user", userController.CreateUser)
 
 	router.Run(":8080")
 }

@@ -9,6 +9,10 @@ var (
 	log *zap.Logger
 )
 
+func GetLog() *zap.Logger {
+	return log
+}
+
 func init() {
 	logConfiguration := zap.Config{
 		Level:    zap.NewAtomicLevelAt(zap.InfoLevel),
@@ -21,6 +25,8 @@ func init() {
 			EncodeTime:   zapcore.ISO8601TimeEncoder,
 			EncodeCaller: zapcore.ShortCallerEncoder,
 		},
+		OutputPaths:      []string{"stdout"},
+		ErrorOutputPaths: []string{"stderr"},
 	}
 
 	log, _ = logConfiguration.Build()
