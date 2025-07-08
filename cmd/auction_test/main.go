@@ -10,37 +10,57 @@ import (
 	"fullcycle-auction_go/internal/usecase/user_usecase"
 	"io"
 	"net/http"
+	"os"
 	"time"
 )
 
+type Test struct {
+	baseUrl string
+}
+
 func main() {
-	userId, err := addUser()
+
+	baseUrl := os.Getenv("BASE_URL")
+
+	if baseUrl == "" {
+		baseUrl = "http://localhost:8080"
+	}
+
+	logger.Info(fmt.Sprintf("Testing %s", baseUrl))
+
+	time.Sleep(time.Second * 10)
+
+	test := Test{
+		baseUrl: baseUrl,
+	}
+
+	userId, err := test.addUser()
 	if err != nil {
 		logger.Error("Error createing user", err)
 		return
 	}
 
-	err = createAuction()
+	err = test.createAuction()
 	if err != nil {
 		logger.Error("Error createing auction", err)
 		return
 	}
 
-	auctionId, err := getAuctionId()
+	auctionId, err := test.getAuctionId()
 	if err != nil {
 		logger.Error("Error createing auction", err)
 		return
 	}
 
-	createBids(auctionId, userId, 30)
+	test.createBids(auctionId, userId, 30)
 
-	getAuction(auctionId)
+	test.getAuction(auctionId)
 
-	getWinnerAuction(auctionId)
+	test.getWinnerAuction(auctionId)
 
 }
 
-func addUser() (string, error) {
+func (t *Test) addUser() (string, error) {
 	data := user_usecase.UserInputDTO{
 		Name: "Teste Usuário",
 	}
@@ -50,7 +70,7 @@ func addUser() (string, error) {
 		logger.Error("Error create user json", err)
 		return "", err
 	}
-	res, err := http.Post("http://localhost:8080/user", "application/json", bytes.NewBuffer(jsonData))
+	res, err := http.Post(fmt.Sprintf("%s/user", t.baseUrl), "application/json", bytes.NewBuffer(jsonData))
 	if err != nil {
 		logger.Error("Error create user request", err)
 		return "", err
@@ -79,7 +99,7 @@ func addUser() (string, error) {
 	return user.Id, nil
 }
 
-func createAuction() error {
+func (t *Test) createAuction() error {
 	data := auction_usecase.AuctionInputDTO{
 		ProductName: "Janela",
 		Category:    "casa",
@@ -92,7 +112,7 @@ func createAuction() error {
 		logger.Error("Error create auction json", err)
 		return err
 	}
-	res, err := http.Post("http://localhost:8080/auction", "application/json", bytes.NewBuffer(jsonData))
+	res, err := http.Post(fmt.Sprintf("%s/auction", t.baseUrl), "application/json", bytes.NewBuffer(jsonData))
 	if err != nil {
 		logger.Error("Error create auction request", err)
 		return err
@@ -107,9 +127,9 @@ func createAuction() error {
 	return nil
 }
 
-func getAuctionId() (string, error) {
+func (t *Test) getAuctionId() (string, error) {
 
-	auctions, err := getActions()
+	auctions, err := t.getAuctions()
 	if err != nil {
 		logger.Error("Error get auctions", err)
 		return "", err
@@ -119,7 +139,7 @@ func getAuctionId() (string, error) {
 
 }
 
-func getActions() ([]auction_usecase.AuctionOutputDTO, error) {
+func (t *Test) getAuctions() ([]auction_usecase.AuctionOutputDTO, error) {
 	logger.Info("Wait for query auction results...")
 
 	var res *http.Response
@@ -128,7 +148,7 @@ func getActions() ([]auction_usecase.AuctionOutputDTO, error) {
 	for {
 		time.Sleep(time.Second * 1)
 
-		res, err = http.Get("http://localhost:8080/auction?status=1")
+		res, err = http.Get(fmt.Sprintf("%s/auction?status=1", t.baseUrl))
 		if err != nil {
 			logger.Error("Error get auction request", err)
 			return nil, err
@@ -155,12 +175,12 @@ func getActions() ([]auction_usecase.AuctionOutputDTO, error) {
 	return auctions, nil
 }
 
-func createBids(auctionId, userId string, bids int) error {
+func (t *Test) createBids(auctionId, userId string, bids int) error {
 
 	logger.Info(fmt.Sprintf("auctionId: %s", auctionId))
 	logger.Info(fmt.Sprintf("userId: %s", userId))
 	for i := range bids {
-		err := createBid(auctionId, userId, i)
+		err := t.createBid(auctionId, userId, i)
 		if err != nil {
 			logger.Error("Error create bids", err)
 			return err
@@ -171,7 +191,7 @@ func createBids(auctionId, userId string, bids int) error {
 
 }
 
-func createBid(auctionId, userId string, i int) error {
+func (t *Test) createBid(auctionId, userId string, i int) error {
 	data := bid_usecase.BidInputDTO{
 		UserId:    userId,
 		AuctionId: auctionId,
@@ -183,7 +203,7 @@ func createBid(auctionId, userId string, i int) error {
 		logger.Error("Error create bid json", err)
 		return err
 	}
-	res, err := http.Post("http://localhost:8080/bid", "application/json", bytes.NewBuffer(jsonData))
+	res, err := http.Post(fmt.Sprintf("%s/bid", t.baseUrl), "application/json", bytes.NewBuffer(jsonData))
 	if err != nil {
 		logger.Error("Error create bid request", err)
 		return err
@@ -198,9 +218,9 @@ func createBid(auctionId, userId string, i int) error {
 	return nil
 }
 
-func getAuction(auctionId string) error {
+func (t *Test) getAuction(auctionId string) error {
 
-	res, err := http.Get(fmt.Sprintf("http://localhost:8080/auction/%s", auctionId))
+	res, err := http.Get(fmt.Sprintf("%s/auction/%s", t.baseUrl, auctionId))
 	if err != nil {
 		logger.Error("Error get auction request", err)
 		return err
@@ -225,9 +245,9 @@ func getAuction(auctionId string) error {
 	return nil
 }
 
-func getWinnerAuction(auctionId string) error {
+func (t *Test) getWinnerAuction(auctionId string) error {
 
-	res, err := http.Get(fmt.Sprintf("http://localhost:8080/auction/winner/%s", auctionId))
+	res, err := http.Get(fmt.Sprintf("%s/auction/winner/%s", t.baseUrl, auctionId))
 	if err != nil {
 		logger.Error("Error get auction request", err)
 		return err

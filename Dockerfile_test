@@ -1,0 +1,23 @@
+FROM golang:1.23 AS build
+
+WORKDIR /app
+
+COPY go.mod ./
+COPY go.sum ./
+RUN go mod download
+
+COPY . .
+
+RUN GOOS=linux CGO_ENABLED=0 go build -o /app/auction_test cmd/auction_test/main.go
+
+FROM alpine
+
+WORKDIR /app
+
+COPY --from=build /app/auction_test /app/auction_test
+
+ENV BASE_URL=http://auction:8080
+
+EXPOSE 8080
+
+ENTRYPOINT ["/app/auction_test"]
