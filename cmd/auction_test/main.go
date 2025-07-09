@@ -48,15 +48,27 @@ func main() {
 
 	auctionId, err := test.getAuctionId()
 	if err != nil {
-		logger.Error("Error createing auction", err)
+		logger.Error("Error creating auction", err)
 		return
 	}
 
-	test.createBids(auctionId, userId, 30)
+	err = test.createBids(auctionId, userId, 30)
+	if err != nil {
+		logger.Error("Error creating bids", err)
+		return
+	}
 
-	test.getAuction(auctionId)
+	err = test.getAuction(auctionId)
+	if err != nil {
+		logger.Error("Error loading auction", err)
+		return
+	}
 
-	test.getWinnerAuction(auctionId)
+	err = test.getWinnerAuction(auctionId)
+	if err != nil {
+		logger.Error("Error geting auction winner", err)
+		return
+	}
 
 }
 

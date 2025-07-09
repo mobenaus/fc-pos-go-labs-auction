@@ -29,3 +29,30 @@ O código-fonte completo da implementação.
 Documentação explicando como rodar o projeto em ambiente dev.
 Utilize docker/docker-compose para podermos realizar os testes de sua aplicação.
 ```
+
+## Execução da solução
+
+```
+docker compose up
+```
+O docker compose é formado pelos seguintes serviços:
+- mongodb: banco de dados
+- mongo-express: serviço web para acessar o mongodb
+- auction: serviço com a implementação do serviço de leilão, com as alterações para fechar o leilão automaticamente (configurado em 20s)
+- auction_test: container que inicia e executa os testes do serviço auction, os testes executados são:
+  - chamar endpoint para criar um usuário
+  - chamar endpoint para criar um leilão (auction)
+  - chamar endpoint para buscar o ultimo leilão aberto e recuperar o Id
+  - chamar 30 vezes o endpoint de lance (bid) 1 vez por segundo, nem todos serão registrados devido ao fechamento automatico do leilão
+  - chamar endpoint de consulta de auction e verificar o estado do leilao (2-fechado)
+  - chamar endpoing de consulta de ganhador do leição (auction/winner)
+  
+## Alterações efetuadas na solução
+
+1. Adicionado mongo-express no docker compose
+2. Implementado o metodo completeAuction e getAuctionInterval em create_auction.go
+3. Otimização de Dockerfile
+4. Implementação dos testes em auction_test
+5. Ajustes no logger, AuctionStatus e outros
+6. Implementação de CreateUser
+7. Adicionado auction_test no docker compose
